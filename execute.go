@@ -19,9 +19,9 @@ type DB interface {
 // database result scan.
 type ScannerFunction func(...interface{}) error
 
-// Serializable defines the interface of types that can be read from
+// Deserializable defines the interface of types that can be read from
 // rows in the database
-type Serializable interface {
+type Deserializable interface {
 	FromRow(ScannerFunction) error
 }
 
@@ -51,7 +51,7 @@ func (r *Result) Next() bool {
 
 // Read reads the data from the current row into the struct pointed at by
 // dest.
-func (r *Result) Read(dest Serializable) error {
+func (r *Result) Read(dest Deserializable) error {
 	return dest.FromRow(func(fields ...interface{}) error {
 		return r.rows.Scan(fields...)
 	})
