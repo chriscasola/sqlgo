@@ -1,8 +1,29 @@
 package sqlgo
 
 import (
+	"fmt"
 	"strconv"
 )
+
+type Serializer struct {
+	params []interface{}
+}
+
+func (s *Serializer) Add(p interface{}) string {
+	i := len(s.params) + 1
+	s.params = append(s.params, p)
+	return fmt.Sprintf("$%v", i)
+}
+
+func (s *Serializer) Params() []interface{} {
+	return s.params
+}
+
+func NewSerializer() *Serializer {
+	s := Serializer{}
+	s.params = make([]interface{}, 0)
+	return &s
+}
 
 // Serializable defines the interface of types that can be written
 // into the database.
