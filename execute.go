@@ -2,6 +2,7 @@ package sqlgo
 
 import (
 	"database/sql"
+
 	_ "github.com/lib/pq" // always use the postgres driver
 )
 
@@ -12,6 +13,7 @@ type DB interface {
 	Ping() error
 	Exec(string, ...interface{}) (sql.Result, error)
 	Query(string, ...interface{}) (*sql.Rows, error)
+	Begin() (*sql.Tx, error)
 }
 
 // ScannerFunction defines a function that takes in pointers
@@ -84,6 +86,47 @@ func (e *Executor) Query(query string, args ...interface{}) (*Result, error) {
 	}
 
 	return &Result{rows: result}, nil
+}
+
+// Transaction represents a database transaction
+type Transaction struct {
+	tx *sql.Tx
+}
+
+// Exec executes a query in the context of the transaction
+func (t *Transaction) Exec(query string, args ...interface{}) (sql.Result, error) {
+	return t.tx.Exec(query, args...)
+}
+
+// Query executes a query in the context of the transaction that returns results
+func (t *Transaction) Query(query string, args ...interface{}) (*Result, error) {
+	result, err := t.tx.Query(query, args...)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &Result{rows: result}, nil
+}
+
+// Commit commits the transaction
+func (t *Transaction) Commit() error {
+	return t.tx.Commit()
+}
+
+// Rollback rolls back the transaction
+func (t *Transaction) Rollback() error {
+	return t.tx.Rollback()
+}
+
+// Begin returns a new transaction
+func (e *Executor) Begin() (*Transaction, error) {
+	t, err := e.db.Begin()
+	if err != nil {
+		return nil, err
+	}
+
+	return &Transaction{tx: t}, nil
 }
 
 // NewExecutor creates a new Executor
